@@ -1,0 +1,19 @@
+{
+  "aws_readiness_notice": "AWS API/AWS integration is not yet ready",
+  "evidence_boundary": "simulation",
+  "export_kind": "preview_bootstrap",
+  "live_aws": "NOT_READY",
+  "main_ancestry_verified": false,
+  "main_promotion": "REQUIRED_FOR_RELEASE",
+  "maintainer_release_attestation": false,
+  "provider_address": "registry.terraform.io/mischapogr/platformipam",
+  "provider_repository": "mischapogr/terraform-provider-platformipam",
+  "registry_publication": "NOT_PUBLISHED",
+  "release_eligible": false,
+  "release_status": "NOT_A_RELEASE",
+  "schema_version": 1,
+  "signing": "UNSIGNED",
+  "source_commit": "cbc591f22a0f844072a9809749cdecf284ad9c3e",
+  "source_repository": "mischapogr/platform-ipam",
+  "source_status": "committed_branch_preview"
+}

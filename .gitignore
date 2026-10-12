@@ -1,0 +1,9 @@
+dist/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.log
+__pycache__/
+.env
+.idea/
