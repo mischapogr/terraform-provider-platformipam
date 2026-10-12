@@ -60,7 +60,7 @@
   },
   "evidence_boundary": "simulation",
   "live_aws": "NOT_READY",
-  "maintainer_review": "PENDING",
+  "maintainer_review": "Reviewed by mischapogr; explicitly confirmed in Codex conversation on 2026-10-12",
   "passed_provider_tests": 42,
   "passed_terraform_cases": 2,
   "platform": "linux_amd64",

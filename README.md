@@ -8,7 +8,7 @@ Provider versions are independent of Platform-IPAM. See [COMPATIBILITY.md](COMPA
 
 ## Simulation RC qualification
 
-The exact exported source passed all eleven local simulation checks. See [the evidence review](release-evidence/REVIEW.md) and [digest-bound summary](release-evidence/SUMMARY.json). The named maintainer attestation remains a draft until review is confirmed.
+The exact exported source passed all eleven local simulation checks. See [the evidence review](release-evidence/REVIEW.md) and [digest-bound summary](release-evidence/SUMMARY.json). The [final maintainer attestation](RELEASE_QUALIFICATION.json) records review by `mischapogr` and binds all eleven evidence digests.
 
 The preserved GitHub workflow publishes only after successful Provider CI, source ancestry, mirror/qualification checks and signing. It reads the immutable source from `SOURCE_COMMIT`. Configure `GPG_PRIVATE_KEY` and `GPG_PASSPHRASE` as repository Actions secrets; the matching public signing key must be registered in Terraform Registry.
 

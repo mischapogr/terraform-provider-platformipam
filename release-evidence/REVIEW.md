@@ -42,7 +42,7 @@ it is false while QUARANTINED. Effective permanent key retirement is proved
 by the persisted quarantine/release state and the API's refusal to recreate
 that key. The evidence makes both facts explicit.
 
-Automated source/evidence review does not substitute for the named maintainer
-attestation. That attestation remains a draft until the maintainer confirms
-review. The separate validation checkout uses a clearly labeled schema-test
-reviewer and is not the publication candidate.
+Maintainer `mischapogr` explicitly confirmed review of this evidence on
+2026-10-12. The final [release attestation](../RELEASE_QUALIFICATION.json)
+records that reviewer and binds all eleven checks to their evidence digests
+and the qualified source commit.
