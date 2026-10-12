@@ -102,12 +102,24 @@ jobs:
           path: platform-ipam-source
           fetch-depth: 0
           persist-credentials: false
-      - name: Verify immutable source, mirror and qualification before building
+      - name: Require reviewed source on monorepo main
         shell: bash
         run: |
           set -euo pipefail
           git -C platform-ipam-source fetch --no-tags origin main
-          git -C platform-ipam-source merge-base --is-ancestor "$SOURCE_REF" FETCH_HEAD
+          if ! git -C platform-ipam-source merge-base --is-ancestor "$SOURCE_REF" FETCH_HEAD; then
+            echo "::error::SOURCE_COMMIT ${SOURCE_REF} is not on mischapogr/platform-ipam main. Promote the reviewed provider source and release tooling to main, then refresh this mirror with the non-preview exporter."
+            printf '%s\n' \
+              '### Publication blocked: source promotion required' \
+              "The reviewed source commit \`${SOURCE_REF}\` is not on monorepo main." \
+              'Promote the reviewed provider source and release tooling, export the immutable main commit without --preview, and commit the refreshed mirror plus its source-bound qualification.' \
+              'No release tag or GitHub Release has been created by this job.' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+      - name: Verify mirror integrity and source-bound qualification
+        shell: bash
+        run: |
+          set -euo pipefail
           python3 platform-ipam-source/scripts/release/check-provider-mirror.py \
             --mirror provider-mirror --source platform-ipam-source/providers/terraform --source-ref "$SOURCE_REF"
           python3 platform-ipam-source/scripts/release/check-provider-qualification.py \
