@@ -27,6 +27,39 @@ The consumer saved-plan guard is `scripts/check-replacement-plan.py`.
 Run it on `terraform show -json` output before applying that same saved plan,
 including manual replacement and taint.
 
+## Semantic versioning automation
+
+The `Provider release` workflow (`.github/workflows/release.yml`) runs Release
+Please on pushes to `main`, or manually from the Actions tab on `main`.
+It opens a release PR from Conventional
+Commits (`feat:`, `fix:`, `perf:` and `!` / `BREAKING CHANGE:`), updating
+`VERSION`, `CHANGELOG.md`, `COMPATIBILITY.json` and its manifest together.
+The first PR targets `0.1.0-rc.1`; the empty manifest deliberately records
+no previous release. While the RC configuration is enabled, subsequent
+candidates increment the RC number. To move to stable releases, change
+`versioning` to `default`, set
+`prerelease` to `false`, and remove `prerelease-type` in a reviewed change.
+The stable policy uses minor bumps for breaking changes before 1.0.
+
+Automation configuration lives under `.github/`, outside the mirrored source
+file set. Release PR changes to mirrored metadata must also be made in the
+authoritative monorepo and exported back here before tagging. Update the
+human-readable compatibility matrix and qualification evidence for each
+candidate; version automation does not establish compatibility or qualification.
+
+Enable **Allow GitHub Actions to create and approve pull requests** in the
+repository's Actions settings. The workflow accepts an optional `RELEASE_TOKEN`
+secret (a GitHub App token or PAT with contents, issues and pull-request write
+access). Use it to trigger CI automatically on bot-created PRs. With the default
+`GITHUB_TOKEN`, GitHub suppresses those workflow events; a maintainer must push
+a change to the PR branch to trigger its checks before merging.
+
+Release Please only prepares PRs. After completing the signed release gates
+below and merging/exporting the reviewed candidate, a maintainer tags that
+exact commit and pushes `v0.1.0-rc.1` for the first release. The existing tag
+workflow builds, signs and publishes the package. Merging a release PR alone
+does not create a tag or GitHub Release.
+
 ## Signed RC publication
 
 The tag workflow calls the monorepo's reusable release workflow pinned to
