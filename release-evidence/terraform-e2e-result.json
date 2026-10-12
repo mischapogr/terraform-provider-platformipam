@@ -1,0 +1,18 @@
+{
+  "aws_readiness_notice": "AWS API/AWS integration is not yet ready",
+  "errors": 0,
+  "evidence_boundary": "simulation",
+  "failures": 0,
+  "passed_tests": [
+    "test_e2e_terraform.TerraformE2ETest.test_destroy_releases_the_allocation_without_freeing_it_immediately",
+    "test_e2e_terraform.TerraformE2ETest.test_plan_reserves_nothing_and_apply_is_stable"
+  ],
+  "provider_address": "registry.terraform.io/mischapogr/platformipam",
+  "provider_binary_sha256": "21ae57f4303686f6b945d9f89f9c3e4d3f2e864df6b52bd086baf38cc6e0d255",
+  "provider_version": "0.1.0-rc.1",
+  "skips": 0,
+  "source_commit": "d1807f4fa6676d6323d7fdddf098b8a39b9fa873",
+  "status": "PASSED",
+  "terraform_image": "hashicorp/terraform:1.14.9@sha256:1d10ec4073f4ddbdf34a28540a3b9250852ab500cb1c53f68c8bd17d82f474d8",
+  "tests_run": 2
+}

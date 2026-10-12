@@ -1,26 +1,23 @@
 # Platform-IPAM Terraform provider
 
-This source mirror was exported from `mischapogr/platform-ipam` commit `a88cc5c7f9b718abbb55a9cdef69708acd875326`. The authoritative provider source is `providers/terraform` at that commit. Do not edit this mirror by hand.
+This source mirror was exported from `mischapogr/platform-ipam` commit `d1807f4fa6676d6323d7fdddf098b8a39b9fa873`. The authoritative provider source is `providers/terraform` at that commit. Do not edit this mirror by hand.
 
-Registry publication, main promotion, signer custody and named review remain separate release gates.
+Registry publication, the source namespace, signing key and sandbox acceptance remain separate release gates.
 
 Provider versions are independent of Platform-IPAM. See [COMPATIBILITY.md](COMPATIBILITY.md) for the version policy and qualified product pairings; `VERSION` and `COMPATIBILITY.json` must match the release tag.
 
-## Unpromoted preview bootstrap
+## Simulation RC qualification
 
-This is an unpromoted preview source export, not a provider release. It uses committed branch source and does not verify main ancestry.
+The exact exported source passed all eleven local simulation checks. See [the evidence review](release-evidence/REVIEW.md) and [digest-bound summary](release-evidence/SUMMARY.json). The named maintainer attestation remains a draft until review is confirmed.
 
-The approved target repository is `mischapogr/terraform-provider-platformipam`; the selected public provider identity is `registry.terraform.io/mischapogr/platformipam`. Registry publication has not occurred.
-
-Promotion of the reviewed source to monorepo `main`, named maintainer review, Registry enrollment, registered signer custody and release qualification remain required before a signed release.
+The preserved GitHub workflow publishes only after successful Provider CI, source ancestry, mirror/qualification checks and signing. It reads the immutable source from `SOURCE_COMMIT`. Configure `GPG_PRIVATE_KEY` and `GPG_PASSPHRASE` as repository Actions secrets; the matching public signing key must be registered in Terraform Registry.
 
 **AWS API/AWS integration is not yet ready.**
-
 
 ## Build and review
 
 Provider CI uses Go 1.26.9 in a pinned Docker image on standard GitHub-hosted
-Ubuntu runners, with module and build caches. It runs formatting, unit tests
+Ubuntu runners, with module and build caches. It runs formatting, unit tests,
 a build and version/compatibility metadata checks without API/AWS sandbox access.
 
 The consumer saved-plan guard is `scripts/check-replacement-plan.py`.
@@ -92,7 +89,7 @@ refresh this mirror using the default (non-preview) exporter, and commit
 `RELEASE_QUALIFICATION.json` with named maintainer review and digest-bound
 `release-evidence/`. Registry enrollment and an ordinary install of the exact
 published package are still required. See the monorepo
-[release runbook](https://github.com/mischapogr/platform-ipam/blob/a88cc5c7f9b718abbb55a9cdef69708acd875326/docs/TERRAFORM_PROVIDER_RELEASE.md).
+[release runbook](https://github.com/mischapogr/platform-ipam/blob/d1807f4fa6676d6323d7fdddf098b8a39b9fa873/docs/TERRAFORM_PROVIDER_RELEASE.md).
 
-The current bootstrap is not a signed release or Registry publication.
+The source is now promoted and simulation-qualified. A signed release and published-origin installation remain separate acceptance steps.
 **AWS API/AWS integration is not yet ready.**

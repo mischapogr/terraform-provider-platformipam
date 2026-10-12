@@ -1,0 +1,1 @@
+{"package_sha256": "5dd713570714c027b764b6364acf84300d3720a1d6f3c9fe71d0cfbb132020fa", "platform": "linux_amd64", "provider_source": "registry.terraform.io/mischapogr/platformipam", "provider_version": "0.1.0-rc.1", "published_origin_acceptance": false, "terraform_version": "1.14.9"}
