@@ -34,8 +34,8 @@ Please on pushes to `main`, or manually from the Actions tab on `main`.
 It opens a release PR from Conventional
 Commits (`feat:`, `fix:`, `perf:` and `!` / `BREAKING CHANGE:`), updating
 `VERSION`, `CHANGELOG.md`, `COMPATIBILITY.json` and its manifest together.
-The first PR targets `0.1.0-rc.1`; the empty manifest deliberately records
-no previous release. While the RC configuration is enabled, subsequent
+The first PR targets `0.1.0-rc.1`; the manifest records the reviewed candidate
+version, while published tags identify actual releases. While the RC configuration is enabled, subsequent
 candidates increment the RC number. To move to stable releases, change
 `versioning` to `default`, set
 `prerelease` to `false`, and remove `prerelease-type` in a reviewed change.
@@ -54,17 +54,30 @@ access). Use it to trigger CI automatically on bot-created PRs. With the default
 `GITHUB_TOKEN`, GitHub suppresses those workflow events; a maintainer must push
 a change to the PR branch to trigger its checks before merging.
 
-Release Please only prepares PRs. After completing the signed release gates
-below and merging/exporting the reviewed candidate, a maintainer tags that
-exact commit and pushes `v0.1.0-rc.1` for the first release. The existing tag
-workflow builds, signs and publishes the package. Merging a release PR alone
-does not create a tag or GitHub Release.
+After a release PR is merged, successful `Provider CI` on the exact `main`
+commit triggers publication. The manifest must match `VERSION`, and the
+candidate must still be the current `main` commit. The publication job checks
+source ancestry, mirror integrity and source-bound qualification, then tests,
+builds, packages and signs the provider. Only after those checks pass does it
+create the immutable version tag and publish a GitHub Release with the signed
+assets and generated changelog notes. RC releases are marked as prereleases.
+
+The initial `0.1.0-rc.1` can also be published by manually running `Provider
+release` on `main`, after its CI and release gates pass. If qualification is
+completed in a follow-up source export, successful CI on that commit retries
+the same recorded version. Tag pushes remain supported for manual releases.
+Published versions are skipped; a retry may reuse a tag pointing to the same
+commit, but never moves an existing tag or replaces published assets. If tag
+creation succeeds but release publication fails, rerun on that exact tag.
+
+The default `GITHUB_TOKEN` can publish in this workflow without triggering
+another workflow. Set `RELEASE_TOKEN` if downstream workflows need the tag or
+release event. Publication does not require that extra token.
 
 ## Signed RC publication
 
-The tag workflow calls the monorepo's reusable release workflow pinned to
-`a88cc5c7f9b718abbb55a9cdef69708acd875326`. Source is pinned by `SOURCE_COMMIT` and the caller's
-`source-ref`. Do not edit mirrored source directly or push a version tag
+The publication job checks out the immutable monorepo commit in `SOURCE_COMMIT`
+and uses its release validators and provider source. Do not edit mirrored source directly or push a version tag
 before completing the release gates.
 
 The supplied public RSA-4096 key is stored at

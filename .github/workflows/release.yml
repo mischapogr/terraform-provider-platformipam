@@ -5,6 +5,10 @@ on:
     branches: [main]
     tags: ['v*.*.*']
   workflow_dispatch:
+  workflow_run:
+    workflows: [Provider CI]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
@@ -16,7 +20,7 @@ concurrency:
 jobs:
   release-pr:
     name: Prepare semantic version release PR
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'workflow_run'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -31,17 +35,173 @@ jobs:
           target-branch: main
           config-file: .github/release-please-config.json
           manifest-file: .github/release-please-manifest.json
-          # Signed packages are published by the tag job after qualification.
+          # The publication job owns tag and release creation after signing.
           skip-github-release: true
 
-  release:
-    if: github.ref_type == 'tag'
+  candidate:
+    name: Select unpublished release candidate
+    if: >-
+      (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || github.ref_type == 'tag')) ||
+      (github.event_name == 'push' && github.ref_type == 'tag') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      release: ${{ steps.candidate.outputs.release }}
+      version: ${{ steps.candidate.outputs.version }}
+      commit: ${{ steps.candidate.outputs.commit }}
+      source_ref: ${{ steps.candidate.outputs.source_ref }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+      - name: Require recorded version and successful CI on the exact commit
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
+          CANDIDATE_REF_TYPE: ${{ github.event_name == 'workflow_run' && 'branch' || github.ref_type }}
+          CANDIDATE_REF_NAME: ${{ github.event_name == 'workflow_run' && 'main' || github.ref_name }}
+        run: >-
+          python3 .github/scripts/release-candidate.py --commit "$CANDIDATE_COMMIT"
+          --ref-type "$CANDIDATE_REF_TYPE" --ref-name "$CANDIDATE_REF_NAME"
+
+  publish:
+    name: Build, sign and publish provider
+    needs: candidate
+    if: needs.candidate.outputs.release == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    concurrency:
+      group: provider-publication-${{ needs.candidate.outputs.version }}
+      cancel-in-progress: false
     permissions:
       contents: write
-    uses: mischapogr/platform-ipam/.github/workflows/terraform-provider-release.yml@a88cc5c7f9b718abbb55a9cdef69708acd875326
-    with:
-      source-ref: a88cc5c7f9b718abbb55a9cdef69708acd875326
-      signing-key-fingerprint: F1EAE2D8ED6BF46AEEE8889E136F9D1E6B3B2BE8
-    secrets:
-      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      actions: read
+    env:
+      VERSION: ${{ needs.candidate.outputs.version }}
+      SOURCE_REF: ${{ needs.candidate.outputs.source_ref }}
+      RELEASE_COMMIT: ${{ needs.candidate.outputs.commit }}
+      SIGNING_FINGERPRINT: F1EAE2D8ED6BF46AEEE8889E136F9D1E6B3B2BE8
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.candidate.outputs.commit }}
+          path: provider-mirror
+          persist-credentials: false
+      - uses: actions/checkout@v7
+        with:
+          repository: mischapogr/platform-ipam
+          ref: ${{ needs.candidate.outputs.source_ref }}
+          path: platform-ipam-source
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify immutable source, mirror and qualification before building
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C platform-ipam-source fetch --no-tags origin main
+          git -C platform-ipam-source merge-base --is-ancestor "$SOURCE_REF" FETCH_HEAD
+          python3 platform-ipam-source/scripts/release/check-provider-mirror.py \
+            --mirror provider-mirror --source platform-ipam-source/providers/terraform --source-ref "$SOURCE_REF"
+          python3 platform-ipam-source/scripts/release/check-provider-qualification.py \
+            --mirror provider-mirror --source-ref "$SOURCE_REF" --version "$VERSION"
+          python3 platform-ipam-source/providers/terraform/scripts/check-compatibility.py \
+            --expected-version "$VERSION" --release --qualification provider-mirror/RELEASE_QUALIFICATION.json
+      - name: Test, build and package the reviewed linux_amd64 provider
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          owner="${GITHUB_REPOSITORY%%/*}"
+          export PROVIDER_ADDRESS="registry.terraform.io/${owner,,}/platformipam"
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE/platform-ipam-source:/src:ro" \
+            -v "$GITHUB_WORKSPACE/build:/out" \
+            -w /src/providers/terraform -e CGO_ENABLED=0 -e GOOS=linux -e GOARCH=amd64 -e TF_ACC= \
+            -e VERSION -e PROVIDER_ADDRESS \
+            golang:1.26.9-bookworm sh -ec '
+              test -z "$(gofmt -l .)"
+              go test -mod=readonly ./...
+              go build -mod=readonly -buildvcs=false -trimpath \
+                -ldflags "-s -w -X main.version=${VERSION} -X main.providerAddress=${PROVIDER_ADDRESS}" \
+                -o "/out/terraform-provider-platformipam_v${VERSION}" .
+            '
+          python3 platform-ipam-source/scripts/release/package-provider.py \
+            --binary "build/terraform-provider-platformipam_v${VERSION}" \
+            --manifest platform-ipam-source/providers/terraform/terraform-registry-manifest.json \
+            --version "$VERSION" --out dist
+          cp provider-mirror/RELEASE_QUALIFICATION.json dist/RELEASE_QUALIFICATION.json
+      - name: Sign and verify Registry checksums
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$GPG_PRIVATE_KEY" && -n "$GPG_PASSPHRASE" ]] || { echo "Provider signing secrets are required" >&2; exit 1; }
+          export GNUPGHOME="$RUNNER_TEMP/provider-signing-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          mkdir -m 700 "$GNUPGHOME"
+          trap 'gpgconf --kill gpg-agent; rm -rf -- "$GNUPGHOME"' EXIT
+          printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
+          key_algorithm="$(gpg --batch --with-colons --list-secret-keys "$SIGNING_FINGERPRINT" | awk -F: '$1 == "sec" { print $4; exit }')"
+          [[ "$key_algorithm" == 1 || "$key_algorithm" == 3 || "$key_algorithm" == 17 ]] || { echo "Terraform Registry requires an RSA or DSA signing key" >&2; exit 1; }
+          python3 platform-ipam-source/scripts/release/check-provider-assets.py --directory dist --version "$VERSION"
+          printf '%s' "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+            --local-user "$SIGNING_FINGERPRINT" --detach-sign \
+            --output "dist/terraform-provider-platformipam_${VERSION}_SHA256SUMS.sig" \
+            "dist/terraform-provider-platformipam_${VERSION}_SHA256SUMS"
+          python3 platform-ipam-source/scripts/release/check-provider-assets.py \
+            --directory dist --version "$VERSION" --signing-fingerprint "$SIGNING_FINGERPRINT"
+      - name: Recheck candidate immediately before creating the tag
+        id: final-candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANDIDATE_REF_TYPE: ${{ github.event_name == 'workflow_run' && 'branch' || github.ref_type }}
+          CANDIDATE_REF_NAME: ${{ github.event_name == 'workflow_run' && 'main' || github.ref_name }}
+        run: >-
+          python3 provider-mirror/.github/scripts/release-candidate.py --mirror provider-mirror
+          --commit "$RELEASE_COMMIT" --ref-type "$CANDIDATE_REF_TYPE" --ref-name "$CANDIDATE_REF_NAME"
+      - name: Create immutable tag and publish signed assets
+        if: steps.final-candidate.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
+          TAG_EXISTS: ${{ steps.final-candidate.outputs.tag_exists }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="v${VERSION}"
+          if [[ "$TAG_EXISTS" != true ]]; then
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f "ref=refs/tags/$tag" -f "sha=$RELEASE_COMMIT"
+          fi
+          release_args=()
+          notes="Signed Platform-IPAM Terraform provider ${tag} (linux_amd64). Source commit: ${SOURCE_REF}."
+          if [[ "$VERSION" == *-rc.* ]]; then
+            release_args+=(--prerelease)
+            notes="$notes Simulation-qualified RC. AWS API/AWS integration is not yet ready."
+          fi
+          printf '%s\n' "$notes" > "$RUNNER_TEMP/provider-release-notes.md"
+          python3 - "$VERSION" "$RUNNER_TEMP/provider-release-notes.md" <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+          changelog = Path('provider-mirror/CHANGELOG.md').read_text()
+          entry = re.search(r'^## ' + re.escape(sys.argv[1]) + r'(?:\s[^\n]*)?\n(.*?)(?=^## |\Z)', changelog, re.M | re.S)
+          if entry:
+              with open(sys.argv[2], 'a', encoding='utf-8') as stream:
+                  stream.write('\n' + entry[1].strip() + '\n')
+          PY
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" \
+            "dist/terraform-provider-platformipam_${VERSION}_linux_amd64.zip" \
+            "dist/terraform-provider-platformipam_${VERSION}_manifest.json" \
+            "dist/terraform-provider-platformipam_${VERSION}_SHA256SUMS" \
+            "dist/terraform-provider-platformipam_${VERSION}_SHA256SUMS.sig" \
+            dist/RELEASE_QUALIFICATION.json --verify-tag --title "Terraform provider ${tag}" \
+            --notes-file "$RUNNER_TEMP/provider-release-notes.md" "${release_args[@]}"
