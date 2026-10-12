@@ -21,6 +21,8 @@ class CandidateTests(unittest.TestCase):
         (self.mirror / "VERSION").write_text("0.1.0-rc.1\n")
         (self.mirror / "SOURCE_COMMIT").write_text(SOURCE + "\n")
         (self.mirror / ".github/release-please-manifest.json").write_text('{".": "0.1.0-rc.1"}')
+        # The publish job validates the record contents and every evidence digest.
+        (self.mirror / "RELEASE_QUALIFICATION.json").write_text("{}")
         self.published = None
         self.tag = None
         self.main = COMMIT
@@ -53,6 +55,18 @@ class CandidateTests(unittest.TestCase):
         result = self.select()
         self.assertEqual(result, {"release": True, "version": "0.1.0-rc.1", "tag": "v0.1.0-rc.1",
                                   "commit": COMMIT, "source_ref": SOURCE, "tag_exists": False})
+
+    def test_main_without_maintainer_attestation_waits_for_review(self):
+        (self.mirror / "RELEASE_QUALIFICATION.json").unlink()
+        result = self.select()
+        self.assertFalse(result["release"])
+        self.assertIn("RELEASE_QUALIFICATION.json", result["reason"])
+        self.assertFalse(any(path.startswith("git/ref/tags/") for path in self.requests))
+
+    def test_tag_without_maintainer_attestation_fails(self):
+        (self.mirror / "RELEASE_QUALIFICATION.json").unlink()
+        with self.assertRaisesRegex(ValueError, "tagged release requires"):
+            self.select("tag", "v0.1.0-rc.1")
 
     def test_unmerged_version_creates_nothing(self):
         (self.mirror / ".github/release-please-manifest.json").write_text("{}")

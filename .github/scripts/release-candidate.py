@@ -73,6 +73,12 @@ def select(mirror, commit, ref_type, ref_name, fetch=api):
     source_ref = (mirror / "SOURCE_COMMIT").read_text().strip()
     if not SHA.fullmatch(source_ref):
         raise ValueError("SOURCE_COMMIT must be a full lowercase commit SHA")
+    qualification = mirror / "RELEASE_QUALIFICATION.json"
+    if not qualification.exists() and not qualification.is_symlink():
+        message = "RELEASE_QUALIFICATION.json is pending named maintainer review"
+        if ref_type == "tag":
+            raise ValueError(f"tagged release requires {message}")
+        return {"release": False, "reason": message}
     ref = fetch(f"git/ref/tags/{tag}")
     if ref is not None and tag_commit(ref, fetch) != commit:
         raise ValueError("existing release tag points to a different commit; refusing to move it")
@@ -97,6 +103,9 @@ def main():
                     if isinstance(value, bool):
                         value = str(value).lower()
                     stream.write(f"{key}={value}\n")
+        if not result["release"] and (summary := os.environ.get("GITHUB_STEP_SUMMARY")):
+            with open(summary, "a", encoding="utf-8") as stream:
+                stream.write(f"### Provider publication pending\n\n{result['reason']}\n")
         print(json.dumps(result))
         return 0
     except (OSError, ValueError, KeyError, TypeError) as error:

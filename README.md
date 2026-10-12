@@ -53,8 +53,10 @@ a change to the PR branch to trigger its checks before merging.
 
 After a release PR is merged, successful `Provider CI` on the exact `main`
 commit triggers publication. The manifest must match `VERSION`, and the
-candidate must still be the current `main` commit. The publication job checks
-source ancestry, mirror integrity and source-bound qualification, then tests,
+candidate must still be the current `main` commit. If the final
+`RELEASE_QUALIFICATION.json` is absent, candidate selection records publication
+as pending and skips the publish job. The publication job checks source
+ancestry, mirror integrity and source-bound qualification, then tests,
 builds, packages and signs the provider. Only after those checks pass does it
 create the immutable version tag and publish a GitHub Release with the signed
 assets and generated changelog notes. RC releases are marked as prereleases.

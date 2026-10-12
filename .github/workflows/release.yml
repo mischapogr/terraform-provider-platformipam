@@ -61,7 +61,7 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           persist-credentials: false
-      - name: Require recorded version and successful CI on the exact commit
+      - name: Require recorded version, exact CI and final attestation
         id: candidate
         env:
           GH_TOKEN: ${{ github.token }}
