@@ -81,17 +81,25 @@ before completing the release gates.
 
 The supplied public RSA-4096 key is stored at
 `.github/keys/platformipam-signing-public.asc`, with primary fingerprint
-`F1EAE2D8ED6BF46AEEE8889E136F9D1E6B3B2BE8`. Registry registration and private-key custody are
-not yet verified. Keep private key material and its passphrase in the secret
-store; configure the repository's `GPG_PRIVATE_KEY` and `GPG_PASSPHRASE`
-secrets only through the approved custody process.
+`F1EAE2D8ED6BF46AEEE8889E136F9D1E6B3B2BE8`. Registry installation verified this registered key on 2026-10-12, and the
+maintainer confirmed repository signing-secret setup. Keep private key material
+and its passphrase in the secret store; maintain the repository's
+`GPG_PRIVATE_KEY` and `GPG_PASSPHRASE` through the approved custody process.
 
-Before the first release, promote the reviewed source to monorepo `main`,
+For the next candidate, promote the reviewed source to monorepo `main`,
 refresh this mirror using the default (non-preview) exporter, and commit
 `RELEASE_QUALIFICATION.json` with named maintainer review and digest-bound
-`release-evidence/`. Registry enrollment and an ordinary install of the exact
-published package are still required. See the monorepo
-[release runbook](https://github.com/mischapogr/platform-ipam/blob/d1807f4fa6676d6323d7fdddf098b8a39b9fa873/docs/TERRAFORM_PROVIDER_RELEASE.md).
+`release-evidence/`. Include its exact-binary
+licence/notice packet at `release-evidence/provider-attribution/`; packaging
+validates its version, binary digest and complete file hashes before adding
+project LICENSE/NOTICE and `THIRD_PARTY_NOTICES/` to the ZIP. Regenerate the
+packet for each new binary and retain its dependency review. Registry enrollment
+is complete for `0.1.0-rc.1`; verify ordinary installation of each newly published
+version. See the monorepo
+[release runbook](https://github.com/mischapogr/platform-ipam/blob/835041270e9836ff9690a543bfc847c73633b3c8/docs/TERRAFORM_PROVIDER_RELEASE.md).
 
-The source is now promoted and simulation-qualified. A signed release and published-origin installation remain separate acceptance steps.
+Version `0.1.0-rc.1` is signed, simulation-qualified and available in the public
+Registry. Fresh published-origin initialization, validation and schema loading
+passed with Terraform 1.14.9. Changed packages require a new version and fresh
+qualification; preserve existing release assets and consumer checksums.
 **AWS API/AWS integration is not yet ready.**

@@ -148,6 +148,8 @@ jobs:
           python3 platform-ipam-source/scripts/release/package-provider.py \
             --binary "build/terraform-provider-platformipam_v${VERSION}" \
             --manifest platform-ipam-source/providers/terraform/terraform-registry-manifest.json \
+            --notices provider-mirror/release-evidence/provider-attribution \
+            --project-license platform-ipam-source/LICENSE --project-notice platform-ipam-source/NOTICE \
             --version "$VERSION" --out dist
           cp provider-mirror/RELEASE_QUALIFICATION.json dist/RELEASE_QUALIFICATION.json
       - name: Sign and verify Registry checksums
