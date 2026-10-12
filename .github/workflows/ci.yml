@@ -41,3 +41,5 @@ jobs:
             '
       - name: Portable plan guard syntax
         run: python3 -B -m py_compile scripts/check-replacement-plan.py
+      - name: Provider version and compatibility metadata
+        run: python3 scripts/check-compatibility.py

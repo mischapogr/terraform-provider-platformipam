@@ -11,9 +11,9 @@ jobs:
   release:
     permissions:
       contents: write
-    uses: mischapogr/platform-ipam/.github/workflows/terraform-provider-release.yml@b181a58fd1c6bdf91d99abd09660f66a33889a08
+    uses: mischapogr/platform-ipam/.github/workflows/terraform-provider-release.yml@a88cc5c7f9b718abbb55a9cdef69708acd875326
     with:
-      source-ref: cbc591f22a0f844072a9809749cdecf284ad9c3e
+      source-ref: a88cc5c7f9b718abbb55a9cdef69708acd875326
       signing-key-fingerprint: F1EAE2D8ED6BF46AEEE8889E136F9D1E6B3B2BE8
     secrets:
       GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}

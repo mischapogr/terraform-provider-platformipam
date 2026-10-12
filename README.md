@@ -1,8 +1,10 @@
 # Platform-IPAM Terraform provider
 
-This source mirror was exported from `mischapogr/platform-ipam` commit `cbc591f22a0f844072a9809749cdecf284ad9c3e`. The authoritative provider source is `providers/terraform` at that commit. Do not edit this mirror by hand.
+This source mirror was exported from `mischapogr/platform-ipam` commit `a88cc5c7f9b718abbb55a9cdef69708acd875326`. The authoritative provider source is `providers/terraform` at that commit. Do not edit this mirror by hand.
 
 Registry publication, main promotion, signer custody and named review remain separate release gates.
+
+Provider versions are independent of Platform-IPAM. See [COMPATIBILITY.md](COMPATIBILITY.md) for the version policy and qualified product pairings; `VERSION` and `COMPATIBILITY.json` must match the release tag.
 
 ## Unpromoted preview bootstrap
 
@@ -14,11 +16,12 @@ Promotion of the reviewed source to monorepo `main`, named maintainer review, Re
 
 **AWS API/AWS integration is not yet ready.**
 
+
 ## Build and review
 
 Provider CI uses Go 1.26.9 in a pinned Docker image on standard GitHub-hosted
 Ubuntu runners, with module and build caches. It runs formatting, unit tests
-and a build without API/AWS sandbox access.
+a build and version/compatibility metadata checks without API/AWS sandbox access.
 
 The consumer saved-plan guard is `scripts/check-replacement-plan.py`.
 Run it on `terraform show -json` output before applying that same saved plan,
@@ -27,7 +30,7 @@ including manual replacement and taint.
 ## Signed RC publication
 
 The tag workflow calls the monorepo's reusable release workflow pinned to
-`b181a58fd1c6bdf91d99abd09660f66a33889a08`. Source is pinned by `SOURCE_COMMIT` and the caller's
+`a88cc5c7f9b718abbb55a9cdef69708acd875326`. Source is pinned by `SOURCE_COMMIT` and the caller's
 `source-ref`. Do not edit mirrored source directly or push a version tag
 before completing the release gates.
 
@@ -43,7 +46,7 @@ refresh this mirror using the default (non-preview) exporter, and commit
 `RELEASE_QUALIFICATION.json` with named maintainer review and digest-bound
 `release-evidence/`. Registry enrollment and an ordinary install of the exact
 published package are still required. See the monorepo
-[release runbook](https://github.com/mischapogr/platform-ipam/blob/cbc591f22a0f844072a9809749cdecf284ad9c3e/docs/TERRAFORM_PROVIDER_RELEASE.md).
+[release runbook](https://github.com/mischapogr/platform-ipam/blob/a88cc5c7f9b718abbb55a9cdef69708acd875326/docs/TERRAFORM_PROVIDER_RELEASE.md).
 
 The current bootstrap is not a signed release or Registry publication.
 **AWS API/AWS integration is not yet ready.**

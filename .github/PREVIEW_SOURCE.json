@@ -13,7 +13,7 @@
   "release_status": "NOT_A_RELEASE",
   "schema_version": 1,
   "signing": "UNSIGNED",
-  "source_commit": "cbc591f22a0f844072a9809749cdecf284ad9c3e",
+  "source_commit": "a88cc5c7f9b718abbb55a9cdef69708acd875326",
   "source_repository": "mischapogr/platform-ipam",
   "source_status": "committed_branch_preview"
 }
