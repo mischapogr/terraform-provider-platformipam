@@ -1,0 +1,17 @@
+{
+  "aws_mode": "fake",
+  "aws_readiness_notice": "AWS API/AWS integration is not yet ready",
+  "evidence_boundary": "simulation",
+  "go_image": "golang:1.26.9-bookworm",
+  "live_aws": "NOT_READY",
+  "project": "platform-ipam-rc-e2e-20261012",
+  "provider_version": "0.1.0-rc.1",
+  "runners": {
+    "run-rc-terraform-e2e-20261012.py": "3f14d10c9aa99a42c7bac3091d0bd8025384f398bb63622ad87b593a550266a9",
+    "verify-rc-replacement-20261012.py": "f1ccbd2acd0702b6d65f91f064f8d2ca3f89b2144416d4b9c78f8da1fac1d2b3"
+  },
+  "source_commit": "d1807f4fa6676d6323d7fdddf098b8a39b9fa873",
+  "source_tree": "315b476c12f7f5bb1a4ed9cb83853f3fdcf5a3a5",
+  "terraform_image": "hashicorp/terraform:1.14.9@sha256:1d10ec4073f4ddbdf34a28540a3b9250852ab500cb1c53f68c8bd17d82f474d8",
+  "tracked_source_clean": true
+}
